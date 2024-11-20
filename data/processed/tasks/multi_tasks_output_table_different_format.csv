@@ -1,0 +1,13 @@
+Tasks,Classes
+Category,"Mission, Maintenance"
+Sub-mission,"Combat, Exercise, Sortie, Humanitarian, Fleet Support, Not Applicable"
+Level,"Fleet, Ship, Equipment"
+Action,"Select K out of N, Identify, Evaluate"
+Entity,"Ship, Equipment, Workshop"
+From,"Fleet, Ships, Equipment, Workshops"
+Time,"FROM PARAGRAPH"
+Location,"FROM PARAGRAPH"
+Task Objective,"Interrogation and interception, Gun firing, Missile firing, Search and rescue, Maintenance scheduling"
+Objective function,"Minimum risk, Maximum availability, Minimum time, Minimum cost, Maximum reliability, Maximum conformance, Minimum downtime"
+Hard Constraints,"Capability, Speed, Endurance, Ration, Fuel, Spares availability, Reliability, Risk score, Balancing loads, Workshop availability, Manpower availability, Conformance"
+Soft Constraints (Preferences),"Fleet availability, Ship class, Working hours, Manpower availability, Logistic time, Activity sequence"
