@@ -56,7 +56,7 @@ labels = args.labels
 seed = args.seed
 model = args.model
 task = args.task
-data_pipline_available = args.data_pipeline_available
+data_pipline_available = args.data_pipeline_available == "True"
 is_data_split = args.is_data_split
 
 val_per = args.val_per
@@ -96,7 +96,7 @@ lr=0.01
 
 
 
-processed_data_path="../../data/processed/"
+processed_data_path="../data/processed/"
 full_path = processed_data_path+ "version" + str(version) + "/full.csv"
 df_full = pd.read_csv(full_path)
 all_tasks = df_full.columns[1:]
@@ -114,9 +114,11 @@ X_V, X_feats_V, Y_V, X_T, X_feats_T, Y_T, X_L, Y_L, X_feats_L, X_U, X_feats_U = 
     seed=seed,
     print_shape=print_shape
 )
-
+# print("paths--->",X_V, X_feats_V, Y_V, X_T, X_feats_T, Y_T, X_L, Y_L, X_feats_L, X_U, X_feats_U )
 # %%
-if not data_pipline_available:
+print("data_pipline_available",data_pipline_available)
+if data_pipline_available:
+    print("data_pipline_available",data_pipline_available)
 
     from applyLF import run_applyLF
     
@@ -134,6 +136,7 @@ if not data_pipline_available:
                     seed=seed,
                     num_top_words = num_top_words
                 )
+        print("lf ran")
     else:
         label_instances = list(df_full[labels].value_counts().index)
         label_instances.sort()
@@ -152,7 +155,7 @@ if not data_pipline_available:
 # # %%
 # if model == "JL":
 #     if task == "all":
-#         for labels in all_tasks:
+#         for labels in all_t asks:
 #             label_instances = list(df_full[labels].value_counts().index)
 #             label_instances.sort()
 #             run_jl(

@@ -43,6 +43,7 @@ def pred_task(scenario, version = 1, model ="JL", labels = "Category",scenario_e
         # Load data
     data_U = get_data(path=U_path_pkl, check_shapes=True)
     n_lfs = data_U[1].shape[1]
+    
     # Initialize JL
     # Configuration settings
 

@@ -38,8 +38,10 @@ def pred_task(scenario, version=1, model="JL", labels="Category", scenario_embed
         U_path_pkl,
     ) = define_data_pipeline_paths(version, labels, model)
     print("------------>>>",U_path_pkl)
+    print("------------>>>",path_json)
 
     (log_path_1, params_path) = define_log_and_param_paths(version, labels, model)
+    print("------------>>>",params_path)
 
     # Load data
     data_U = get_data(path=U_path_pkl, check_shapes=True)

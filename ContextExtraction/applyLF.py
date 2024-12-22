@@ -27,6 +27,7 @@ def run_applyLF(
                 num_top_words=2, 
                 
             ):
+    print("--->Running applyLF")
     
 
    
@@ -89,7 +90,7 @@ def run_applyLF(
                  labeling_path, full_labeling, V_path_labeling, T_path_labeling, L_path_labeling, U_path_labeling) = run_create_dir_files_path(version, labels, model)
     
     if not label_instances:
-        full_path = "../../data/processed/" + "version"+str(version) + "/full.csv"
+        full_path = "../data/processed/" + "version"+str(version) + "/full.csv"
         df_full = pd.read_csv(full_path)
         label_instances = list(df_full[labels].value_counts().index)
         
@@ -99,6 +100,7 @@ def run_applyLF(
 
    
     ClassLabels, rules = design_lf(labels, label_instances, version = version, num_top_words = num_top_words)
+    
     num_classes = len(label_instances)
 
 
@@ -141,6 +143,7 @@ def run_applyLF(
                                         num_classes=num_classes)
             context_noisy_labels.generate_pickle(V_path_pkl)
             context_noisy_labels.generate_json(path_json) #generating json files once is enough
+            print("V_path_pkl",V_path_pkl)
 
             analyse = context_noisy_labels.analyse_lfs(plot=True)
             analyse.to_csv(V_path_labeling, index =False)
@@ -157,6 +160,7 @@ def run_applyLF(
                                         labels_enum=ClassLabels,
                                         num_classes=num_classes)
             context_noisy_labels.generate_pickle(L_path_pkl)
+            print("L_path_pkl",L_path_pkl)
 
             analyse = context_noisy_labels.analyse_lfs(plot=True)
             analyse.to_csv(L_path_labeling, index =False)
@@ -172,7 +176,7 @@ def run_applyLF(
                                     labels_enum=ClassLabels,
                                     num_classes=num_classes)
         context_noisy_labels.generate_pickle(T_path_pkl)
-
+        print("T_path_pkl",T_path_pkl)
         analyse = context_noisy_labels.analyse_lfs(plot=True)
         analyse.to_csv(T_path_labeling, index =False)
         plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = T_path_plot)
@@ -187,7 +191,7 @@ def run_applyLF(
                                     labels_enum=ClassLabels,
                                     num_classes=num_classes) # note that we don't pass gold_labels here, for the unlabelled data
         context_noisy_labels.generate_pickle(U_path_pkl)
-
+        print("U_path_pkl",U_path_pkl)
         analyse = context_noisy_labels.analyse_lfs(plot=True)
         analyse.to_csv(U_path_labeling, index =False)
         plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = U_path_plot)

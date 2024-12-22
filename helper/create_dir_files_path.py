@@ -23,7 +23,7 @@ def define_data_pipeline_paths(version, labels, model):
     Returns:
         tuple: Tuple containing data paths.
     """
-    base_path = f"../checkpoints/data_pipeline/version{version}/{labels}/{model}/"
+    base_path = f"../checkpoint/data_pipeline/version{version}/{labels}/{model}/"
     data_pipeline_path = base_path
     full_pkl = os.path.join(base_path, f"{labels}_pickle.pkl")
     full_path_json = os.path.join(base_path, f"{labels}_full.json")
@@ -47,8 +47,8 @@ def define_log_and_param_paths(version, labels, model):
     Returns:
         tuple: Tuple containing log and parameter paths.
     """
-    log_path_1 = f'../checkpoints/log/version{version}/{labels}/{model}/context_log_1.txt'
-    params_path = f'../checkpoints/version{version}/{model}/{labels}.pkl'
+    log_path_1 = f'../checkpoint/log/version{version}/{labels}/{model}/context_log_1.txt'
+    params_path = f'../checkpoint/version{version}/{model}/{labels}.pkl'
     return (log_path_1, params_path)
 
 def define_figure_paths(version, labels, model):

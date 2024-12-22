@@ -75,7 +75,7 @@ def design_lf(labels,label_instances,version,num_top_words = 2):
     ## instead of running trigwords agaian and again, please save them
    
 
-    auto_lf_path = f"../../checkpoints/auto_trigWords/version{version}/{labels}.pkl"
+    auto_lf_path = f"../checkpoint/auto_trigWords/version{version}/{labels}.pkl"
     os.makedirs(os.path.dirname(auto_lf_path), exist_ok=True)
 
     if  os.path.exists(auto_lf_path):

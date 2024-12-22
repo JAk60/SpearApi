@@ -1,2 +1,2 @@
-python ./../train.py --version 1 --mode exp --label_per 0.2 --labels Category --seed 42 --model JL --task all --data_pipline_available True --is_data_split True --val_per  0.15 --test_per 0.15 --num_top_words 2 
-python ./../train.py  --model CAGE
+python ../ContextExtraction/train.py --version 1 --mode exp --label_per 0.2 --labels Category --seed 42 --model JL --task all --data_pipeline_available True --is_data_split True --val_per  0.15 --test_per 0.15 --num_top_words 2 
+# python ./../train.py  --model CAGE

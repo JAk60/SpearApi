@@ -45,7 +45,7 @@ def auto_trigWords(labels, version = 3, num_top_words = 2):
 
     print(version, "3")
 
-    processed_data_path = "../../data/processed/version"
+    processed_data_path = "../data/processed/version"
     train_path = processed_data_path + str(version) + "/train.csv"
     val_path = processed_data_path + str(version) + "/val.csv"
     test_path = processed_data_path + str(version) + "/test.csv"

@@ -1,3 +1,6 @@
 /checkpoints/
 /spear/
 /venv/
+*.pyc
+*.pyo
+__pycache__/

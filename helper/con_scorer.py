@@ -8,6 +8,7 @@ from gensim.models.keyedvectors import KeyedVectors
 import gensim.matutils as gm
 
 print("glove_w2v model loading")
+
 model = None
 try:
     # please download glove_w2v.txt file
