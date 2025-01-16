@@ -26,3 +26,20 @@ def reverse_train_test_split(df_train, df_val, df_test):
     print(f"Combined DataFrame : {df.shape}")
 
     return df
+
+def extract_unique_labels(df,labels):
+    # Get the label instances from value_counts()
+    label_instances = list(df[labels].value_counts().index)
+    
+    # Create an empty set to store unique labels
+    unique_labels = set()
+    
+    # Process each label instance
+    for item in label_instances:
+        # Split by comma and strip whitespace
+        individual_labels = [label.strip() for label in item.split(',')]
+        # Add each label to the set
+        unique_labels.update(individual_labels)
+    
+    # Convert set back to sorted list
+    return sorted(list(unique_labels))

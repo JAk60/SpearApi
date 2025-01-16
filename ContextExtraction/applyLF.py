@@ -11,7 +11,7 @@ sys.path.append('../codes/')
 from spear.labeling import PreLabels
 
 from lfs import manual_trigWords, design_lf
-
+from utils import extract_unique_labels
 from helper.plots import plot_df_bar
 from helper.utils import  get_various_data, get_test_U_data, load_data_train_test_split, divide_labeled_unlabeled, print_all_shapes
 from helper.create_dir_files_path import run_create_dir_files_path
@@ -92,7 +92,8 @@ def run_applyLF(
     if not label_instances:
         full_path = "../data/processed/" + "version"+str(version) + "/full.csv"
         df_full = pd.read_csv(full_path)
-        label_instances = list(df_full[labels].value_counts().index)
+        label_instances = extract_unique_labels(df_full,labels)
+        # label_instances = list(df_full[labels].value_counts().index)
         
     label_instances.sort()
 
@@ -126,8 +127,8 @@ def run_applyLF(
 
         analyse = context_noisy_labels.analyse_lfs(plot=True)
         analyse.to_csv(full_labeling, index =False)
-        plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = all_task_plot)
-        plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = full_plot)
+        # plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = all_task_plot)
+        # plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = full_plot)
 
 
     else:
@@ -145,9 +146,9 @@ def run_applyLF(
             context_noisy_labels.generate_json(path_json) #generating json files once is enough
             print("V_path_pkl",V_path_pkl)
 
-            analyse = context_noisy_labels.analyse_lfs(plot=True)
-            analyse.to_csv(V_path_labeling, index =False)
-            plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = V_path_plot)
+            # analyse = context_noisy_labels.analyse_lfs(plot=True)
+            # analyse.to_csv(V_path_labeling, index =False)
+            # plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = V_path_plot)
 
 
 
@@ -162,9 +163,9 @@ def run_applyLF(
             context_noisy_labels.generate_pickle(L_path_pkl)
             print("L_path_pkl",L_path_pkl)
 
-            analyse = context_noisy_labels.analyse_lfs(plot=True)
-            analyse.to_csv(L_path_labeling, index =False)
-            plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = L_path_plot)
+            # analyse = context_noisy_labels.analyse_lfs(plot=True)
+            # analyse.to_csv(L_path_labeling, index =False)
+            # plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = L_path_plot)
 
 
 
@@ -177,9 +178,9 @@ def run_applyLF(
                                     num_classes=num_classes)
         context_noisy_labels.generate_pickle(T_path_pkl)
         print("T_path_pkl",T_path_pkl)
-        analyse = context_noisy_labels.analyse_lfs(plot=True)
-        analyse.to_csv(T_path_labeling, index =False)
-        plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = T_path_plot)
+        # analyse = context_noisy_labels.analyse_lfs(plot=True)
+        # analyse.to_csv(T_path_labeling, index =False)
+        # plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = T_path_plot)
 
         if model =="CAGE":
             context_noisy_labels.generate_json(path_json) 
@@ -192,9 +193,9 @@ def run_applyLF(
                                     num_classes=num_classes) # note that we don't pass gold_labels here, for the unlabelled data
         context_noisy_labels.generate_pickle(U_path_pkl)
         print("U_path_pkl",U_path_pkl)
-        analyse = context_noisy_labels.analyse_lfs(plot=True)
-        analyse.to_csv(U_path_labeling, index =False)
-        plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = U_path_plot)
+        # analyse = context_noisy_labels.analyse_lfs(plot=True)
+        # analyse.to_csv(U_path_labeling, index =False)
+        # plot_df_bar(df=analyse, mode =  "aggregate" , fig_path = U_path_plot)
 
 
 if __name__ == "__main__":

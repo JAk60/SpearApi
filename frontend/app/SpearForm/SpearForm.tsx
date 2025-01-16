@@ -1,249 +1,278 @@
-"use client";
-
+import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader } from "@/components/ui/card";
-import {
-	Form,
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import axios, { AxiosResponse } from "axios";
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import DataTable, { DataEntry } from "../DataTable/page";
+
+// Type definitions
+interface QuestionData {
+  question: string;
+  metadata: {
+    layer_type: string;
+    layer_key: string;
+    class_1: string;
+    class_2: string;
+    prob_diff: number;
+  };
+}
+
+interface CompletionData {
+  status: 'completed';
+  refined_classifications: Record<string, Record<string, number>>;
+  high_confidence_classifications: Record<string, Record<string, number>>;
+  timing_summary: {
+    total_time: number;
+    connection_time: number;
+    checkpoints: Record<string, number>;
+  };
+  log_file?: string;
+}
+
+interface ErrorData {
+  error: string;
+}
+
+type WSMessage = QuestionData | CompletionData | ErrorData;
+
+// Type guard functions
+function isCompletionData(data: WSMessage): data is CompletionData {
+  return (
+    (data as CompletionData).status === 'completed' &&
+    typeof (data as CompletionData).refined_classifications === 'object' &&
+    (data as CompletionData).refined_classifications !== null &&
+    (data as CompletionData).high_confidence_classifications !== null &&
+    typeof (data as CompletionData).timing_summary === 'object' &&
+    (data as CompletionData).timing_summary !== null
+  );
+}
+
+
+
+function isQuestionData(data: WSMessage): data is QuestionData {
+  return typeof (data as QuestionData).question === 'string' && 
+         (data as QuestionData).metadata !== undefined &&
+         typeof (data as QuestionData).metadata.layer_type === 'string';
+}
+
 
 const formSchema = z.object({
-	scenario: z.string().min(1, "Scenario is required"),
-	model: z.string().min(1, "Model is required"),
-	version: z.string().min(1, "Version is required"),
+  scenario: z.string().min(1, "Scenario is required"),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 export default function SpearForm() {
-	const [prediction, setPrediction] = useState<DataEntry[] | undefined>();
-	const { toast } = useToast();
-	const form = useForm<z.infer<typeof formSchema>>({
-		resolver: zodResolver(formSchema),
-		defaultValues: {
-			scenario: "",
-			model: "JL",
-			version: "2",
-		},
-	});
+  const [currentQuestion, setCurrentQuestion] = useState<QuestionData | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [questionHistory, setQuestionHistory] = useState<Array<{question: string, answer: string}>>([]);
+  const [refinedClassifications, setRefinedClassifications] = useState<Record<string, Record<string, number>> | null>(null);
+  const [highClassifications, setHighClassifications] = useState<Record<string, Record<string, number>> | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const { toast } = useToast();
 
-	const axiosInstance = axios.create({
-		baseURL: "http://127.0.0.1:8000",
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-	});
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      scenario: "",
+    },
+  });
 
-	const mutation = useMutation<
-		AxiosResponse<DataEntry[]>,
-		Error,
-		z.infer<typeof formSchema>
-	>({
-		mutationFn: (values) => axiosInstance.post("/predict", values),
-		onSuccess: (response) => {
-			// Safely handle the response data
-			const resultData = Array.isArray(response.data)
-				? response.data
-				: [];
+  const connectWebSocket = (scenario: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.close();
+    }
 
-			setPrediction(resultData);
+    const url = new URL('ws://127.0.0.1:8000/predict');
+    url.searchParams.append('scenario', scenario);
+    url.searchParams.append('version', '6');
+    url.searchParams.append('model', 'BERT_classifier');
 
-			toast({
-				title: "Prediction Successful",
-				description: (
-					<pre className="h-full mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-						<code className="text-white">
-							<ScrollArea className="h-[200px] w-[350px] rounded-md border p-4">
-								{JSON.stringify(resultData, null, 2)}
-							</ScrollArea>
-						</code>
-					</pre>
-				),
-			});
-		},
-		onError: (error) => {
-			const errorMessage = axios.isAxiosError(error)
-				? error.code === "ERR_NETWORK"
-					? "Unable to connect to the server. Please check if the server is running and try again."
-					: error.response
-					? `Server error: ${error.response.status} ${error.response.statusText}`
-					: "There was a problem with your request."
-				: "There was a problem with your request.";
+    wsRef.current = new WebSocket(url.toString());
+    
+    wsRef.current.onopen = () => {
+      console.log('WebSocket connection established');
+      setIsProcessing(true);
+      setQuestionHistory([]);
+      setRefinedClassifications(null);
+      setHighClassifications(null);
+    };
 
-			toast({
-				variant: "destructive",
-				title: "Uh oh! Something went wrong.",
-				description: errorMessage,
-			});
-			console.error("Mutation error", error);
-		},
-	});
+    wsRef.current.onmessage = (event: MessageEvent) => {
+      const data = JSON.parse(event.data) as WSMessage;
+      
+      debugger
+      if (isCompletionData(data)) {
+        setIsProcessing(false);
+        setCurrentQuestion(null);
+        setRefinedClassifications(data.refined_classifications);
+        setHighClassifications(data.high_confidence_classifications)
+        console.log('Refined Classifications:', data.refined_classifications);
+        console.log('high_confidence_classifications:', data.high_confidence_classifications);
+        toast({
+          title: "Processing Complete",
+          description: `Analysis completed in ${data.timing_summary.total_time.toFixed(2)} seconds`,
+        });
+        wsRef.current?.close();
+      } else if (isQuestionData(data)) {
+        setCurrentQuestion(data);
+      } else {
+        // Handle error case
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: 'error' in data ? data.error : "Unknown error occurred",
+        });
+        setIsProcessing(false);
+      }
+    };
 
-	function onSubmit(values: z.infer<typeof formSchema>) {
-		mutation.mutate(values);
-	}
+    wsRef.current.onerror = () => {
+      toast({
+        variant: "destructive",
+        title: "WebSocket Error",
+        description: "Connection failed or encountered an error",
+      });
+      setIsProcessing(false);
+    };
 
-	return (
-		<>
-			<Card className="p-9">
-				<CardHeader className="text-2xl">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						className="lucide lucide-circle-slash-2"
-					>
-						<circle cx="12" cy="12" r="10" />
-						<path d="M22 2 2 22" />
-					</svg>
-					SPEAR
-				</CardHeader>
-				<Form {...form}>
-					<form
-						onSubmit={form.handleSubmit(onSubmit)}
-						className="space-y-6 max-w-3xl mx-[300px] py-10"
-					>
-						<FormField
-							control={form.control}
-							name="scenario"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Scenario</FormLabel>
-									<FormControl>
-										<Textarea
-											placeholder="Please Enter the Mission Scenario"
-											className="resize-none"
-											{...field}
-										/>
-									</FormControl>
-									<FormDescription>
-										Enter your Scenario here.
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+    wsRef.current.onclose = () => {
+      setIsProcessing(false);
+    };
+  };
 
-						<div className="grid grid-cols-12 gap-4">
-							<div className="col-span-6">
-								<FormField
-									control={form.control}
-									name="model"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Model</FormLabel>
-											<Select
-												onValueChange={field.onChange}
-												value={field.value}
-											>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue placeholder="Select a model" />
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													<SelectItem value="Bert">
-														Bert
-													</SelectItem>
-													<SelectItem value="CAGE">
-														CAGE
-													</SelectItem>
-													<SelectItem value="JL">
-														JL
-													</SelectItem>
-												</SelectContent>
-											</Select>
-											<FormDescription>
-												Select which model to use
-											</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
+  const handleAnswer = (answer: 'yes' | 'no') => {
+    if (wsRef.current?.readyState === WebSocket.OPEN && currentQuestion) {
+      wsRef.current.send(answer);
+      setQuestionHistory(prev => [...prev, {
+        question: currentQuestion.question,
+        answer: answer
+      }]);
+      setCurrentQuestion(null);
+    }
+  };
 
-							<div className="col-span-6">
-								<FormField
-									control={form.control}
-									name="version"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Variant</FormLabel>
-											<Select
-												onValueChange={field.onChange}
-												value={field.value}
-											>
-												<FormControl>
-													<SelectTrigger>
-														<SelectValue placeholder="Select a variant" />
-													</SelectTrigger>
-												</FormControl>
-												<SelectContent>
-													<SelectItem value="1">
-														1
-													</SelectItem>
-													<SelectItem value="2">
-														2
-													</SelectItem>
-													<SelectItem value="3">
-														3
-													</SelectItem>
-												</SelectContent>
-											</Select>
-											<FormDescription>
-												Choose a variant
-											</FormDescription>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
-						</div>
-						<Button
-							type="submit"
-							disabled={mutation.status === "pending"}
-						>
-							{mutation.status === "pending" ? (
-								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-									Submitting...
-								</>
-							) : (
-								"Submit"
-							)}
-						</Button>
-					</form>
-				</Form>
-			</Card>
-			{prediction && <DataTable data={prediction} />}
-		</>
-	);
+  const onSubmit = (values: FormValues) => {
+    setIsProcessing(true);
+    connectWebSocket(values.scenario);
+  };
+
+  useEffect(() => {
+    return () => {
+      wsRef.current?.close();
+    };
+  }, []);
+
+  return (
+    <div className="space-y-6 mx-auto py-10">
+      <Card className="p-9">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="scenario"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Scenario</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Please Enter the Mission Scenario"
+                      className="resize-none"
+                      disabled={isProcessing}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={isProcessing}>
+              {isProcessing ? "Processing..." : "Submit"}
+            </Button>
+          </form>
+        </Form>
+      </Card>
+
+      {currentQuestion && (
+        <Card className="p-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Question:</h3>
+            <p className="text-gray-700">{currentQuestion.question}</p>
+            <div className="flex space-x-4">
+              <Button 
+                onClick={() => handleAnswer("yes")}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Yes
+              </Button>
+              <Button 
+                onClick={() => handleAnswer("no")}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                No
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {questionHistory.length > 0 && (
+        <Card className="p-6">
+          <h3 className="text-lg font-medium mb-4">Question History</h3>
+          <div className="space-y-4">
+            {questionHistory.map((item, index) => (
+              <div key={index} className="border-b pb-2">
+                <p className="font-medium">Q: {item.question}</p>
+                <p className="text-gray-600">A: {item.answer}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {refinedClassifications && (
+        <Card className="p-6">
+          <h3 className="text-lg font-medium mb-4">Final Classifications</h3>
+          <div className="space-y-4">
+            {Object.entries(refinedClassifications).map(([layer, classifications]) => (
+              <div key={layer} className="border-b pb-4">
+                <h4 className="font-medium mb-2">{layer}</h4>
+                <div className="pl-4">
+                  {Object.entries(classifications).map(([className, probability]) => (
+                    <div key={className} className="text-sm">
+                      <span className="font-medium">{className}:</span>{' '}
+                      <span className="text-gray-600">{(probability * 100).toFixed(2)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+      {highClassifications && (
+        <Card className="p-6">
+          <h3 className="text-lg font-medium mb-4">Final Classifications</h3>
+          <div className="space-y-4">
+            {Object.entries(highClassifications).map(([layer, classifications]) => (
+              <div key={layer} className="border-b pb-4">
+                <h4 className="font-medium mb-2">{layer}</h4>
+                <div className="pl-4">
+                  {Object.entries(classifications).map(([className, probability]) => (
+                    <div key={className} className="text-sm">
+                      <span className="font-medium">{className}:</span>{' '}
+                      <span className="text-gray-600">{(probability * 100).toFixed(2)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
 }

@@ -1,0 +1,11 @@
+layer_number,layer_type,class_1,class_2,prob_1,prob_2,prob_diff,question
+1,CATEGORY,Mission,Maintenance,0.8487513866008655,0.1512486133991345,0.6975027732017309,Classification confident
+2,MISSION_TYPE,Exercise,Combat,0.47007305291866275,0.2988156701658637,0.17125738275279906,Classification confident
+3,CRITICALITY,High,Low,0.7773462692441703,0.22265373075582973,0.5546925384883405,Classification confident
+4,LEVEL,Ship,Fleet,0.4838242259409467,0.37801218389874575,0.10581204204220096,Classification confident
+5,ACTION,Evaluate,Identify,0.7635769991758632,0.2094473911795486,0.5541296079963146,Classification confident
+6,ENTITY,Ship,Equipment,0.9172509683923605,0.07567680877895067,0.8415741596134099,Classification confident
+7,FROM,Fleet,Ships,0.5542440241147392,0.37273870754665295,0.18150531656808622,Classification confident
+8,TASK_OBJECTIVE,Interrogation and interception,,0.6055735247027539,0.0,0.0,No clarification needed
+9,CONSTRAINTS,Balancing loads,,0.36890967104631306,0.0,0.0,No clarification needed
+10,OBJECTIVE,Maximum conformance,,0.4451603703135538,0.0,0.0,No clarification needed

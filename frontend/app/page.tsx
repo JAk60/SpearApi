@@ -1,12 +1,14 @@
-import Image from "next/image";
-import SpearForm from "./SpearForm/SpearForm";
-import Navbar from "@/components/NavBar";
+// import Image from "next/image";
+// import SpearForm from "./SpearForm/SpearForm";
+// import Navbar from "@/components/NavBar";
+import Dashboard from "@/components/Dashboard";
 
 export default function Home() {
   return (
     <>
-      <Navbar />
-      <div className="grid grid-rows-[1fr_auto] min-h-[calc(100vh-75px)] p-4 sm:p-8 font-[family-name:var(--font-geist-sans)]">
+    <Dashboard />
+      {/* <Navbar /> */}
+      {/* <div className="grid grid-rows-[1fr_auto] min-h-[calc(100vh-75px)] p-4 sm:p-8 font-[family-name:var(--font-geist-sans)]">
         <main className="flex flex-col items-center justify-center w-full pt-8">
           <SpearForm/>
         </main>
@@ -42,7 +44,7 @@ export default function Home() {
             Go to decile-spear →
           </a>
         </footer>
-      </div>
+      </div> */}
     </>
   );
 }

@@ -49,6 +49,7 @@ def preprocess(tokens):
 
 @continuous_scorer()
 def word_similarity(sentence,**kwargs):
+    print("sentence---->>",sentence)
     similarity = 0.0
     words = sentence.split()
     words = preprocess(words)

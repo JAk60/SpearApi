@@ -49,7 +49,7 @@ def pred_task(scenario, version=1, model="JL", labels="Category", scenario_embed
 
     # Initialize models
     feature_model = "nn"
-    n_features = 768
+    n_features = 4224
     n_hidden = 512
 
     if model == "JL":

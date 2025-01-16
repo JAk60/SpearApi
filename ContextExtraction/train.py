@@ -7,7 +7,7 @@ import sys
 sys.path.append('../../')
 sys.path.append('../')
 sys.path.append('../codes/')
-
+from utils import extract_unique_labels
 import os
 import argparse
 import numpy as np
@@ -100,6 +100,7 @@ processed_data_path="../data/processed/"
 full_path = processed_data_path+ "version" + str(version) + "/full.csv"
 df_full = pd.read_csv(full_path)
 all_tasks = df_full.columns[1:]
+print("---->>all tasks",all_tasks)
 
 # %%
 X_V, X_feats_V, Y_V, X_T, X_feats_T, Y_T, X_L, Y_L, X_feats_L, X_U, X_feats_U = process_data(
@@ -124,7 +125,8 @@ if data_pipline_available:
     
     if task == "all":
         for labels in all_tasks:
-            label_instances = list(df_full[labels].value_counts().index)
+            # label_instances = list(df_full[labels].value_counts().index)
+            label_instances = extract_unique_labels(df_full,labels)
             label_instances.sort()
             run_applyLF(
                     X_V, X_feats_V, Y_V, X_T, X_feats_T, Y_T, X_L, Y_L, X_feats_L, X_U, X_feats_U,
@@ -138,7 +140,8 @@ if data_pipline_available:
                 )
         print("lf ran")
     else:
-        label_instances = list(df_full[labels].value_counts().index)
+        # label_instances = list(df_full[labels].value_counts().index)
+        label_instances = extract_unique_labels(df_full,labels)
         label_instances.sort()
         run_applyLF(
                 X_V, X_feats_V, Y_V, X_T, X_feats_T, Y_T, X_L, Y_L, X_feats_L, X_U, X_feats_U,
@@ -152,59 +155,60 @@ if data_pipline_available:
             )
 
 
-# # %%
-# if model == "JL":
-#     if task == "all":
-#         for labels in all_t asks:
-#             label_instances = list(df_full[labels].value_counts().index)
-#             label_instances.sort()
-#             run_jl(
-#                 version=version,
-#                 labels=labels,
-#                 model=model,
-#                 loss_func_mask=loss_func_mask,
-#                 batch_size=batch_size,
-#                 lr_fm=lr_fm,
-#                 lr_gm=lr_gm,
-#                 use_accuracy_score=use_accuracy_score,
-#                 feature_model=feature_model,
-#                 n_features=n_features,
-#                 n_hidden=n_hidden,
-#                 metric_avg=metric_avg,
-#                 n_epochs=n_epochs,
-#                 start_len=start_len,
-#                 stop_len=stop_len,
-#                 is_qt=is_qt,
-#                 is_qc=is_qc,
-#                 qt=qt,
-#                 qc=qc
-#             )
+# %%
+if model == "JL":
+    if task == "all":
+        for labels in all_tasks:
+            label_instances = extract_unique_labels(df_full,labels)
+            # label_instances = list(df_full[labels].value_counts().index)
+            label_instances.sort()
+            run_jl(
+                version=version,
+                labels=labels,
+                model=model,
+                loss_func_mask=loss_func_mask,
+                batch_size=batch_size,
+                lr_fm=lr_fm,
+                lr_gm=lr_gm,
+                use_accuracy_score=use_accuracy_score,
+                feature_model=feature_model,
+                n_features=n_features,
+                n_hidden=n_hidden,
+                metric_avg=metric_avg,
+                n_epochs=n_epochs,
+                start_len=start_len,
+                stop_len=stop_len,
+                is_qt=is_qt,
+                is_qc=is_qc,
+                qt=qt,
+                qc=qc
+            )
 
-#     else:
-#             label_instances = list(df_full[labels].value_counts().index)
-#             label_instances.sort()
-#             # Function call to run_jl with the defined parameters
-#             run_jl(
-#                 version=version,
-#                 labels=labels,
-#                 model=model,
-#                 loss_func_mask=loss_func_mask,
-#                 batch_size=batch_size,
-#                 lr_fm=lr_fm,
-#                 lr_gm=lr_gm,
-#                 use_accuracy_score=use_accuracy_score,
-#                 feature_model=feature_model,
-#                 n_features=n_features,
-#                 n_hidden=n_hidden,
-#                 metric_avg=metric_avg,
-#                 n_epochs=n_epochs,
-#                 start_len=start_len,
-#                 stop_len=stop_len,
-#                 is_qt=is_qt,
-#                 is_qc=is_qc,
-#                 qt=qt,
-#                 qc=qc
-#             )
+    else:
+            label_instances = list(df_full[labels].value_counts().index)
+            label_instances.sort()
+            # Function call to run_jl with the defined parameters
+            run_jl(
+                version=version,
+                labels=labels,
+                model=model,
+                loss_func_mask=loss_func_mask,
+                batch_size=batch_size,
+                lr_fm=lr_fm,
+                lr_gm=lr_gm,
+                use_accuracy_score=use_accuracy_score,
+                feature_model=feature_model,
+                n_features=n_features,
+                n_hidden=n_hidden,
+                metric_avg=metric_avg,
+                n_epochs=n_epochs,
+                start_len=start_len,
+                stop_len=stop_len,
+                is_qt=is_qt,
+                is_qc=is_qc,
+                qt=qt,
+                qc=qc
+            )
 
 
 

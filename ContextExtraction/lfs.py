@@ -45,6 +45,7 @@ def create_labeling_function(lf_name, label, trig_words, cont_scorer=None, THRES
     if cont_scorer:
         @labeling_function(name=lf_name, cont_scorer=cont_scorer, resources=dict(keywords=trig_words), pre=[convert_to_lower], label=label)
         def lf(c, **kwargs):
+            print("trig_words-->>",trig_words,kwargs["continuous_score"])
             if kwargs["continuous_score"] >= THRESHOLD:
                 return label
             else:
@@ -52,6 +53,7 @@ def create_labeling_function(lf_name, label, trig_words, cont_scorer=None, THRES
     else:
         @labeling_function(name=lf_name, resources=dict(keywords=trig_words), pre=[convert_to_lower], label=label)
         def lf(x, **kwargs):
+            print("trig_words-->>",trig_words,kwargs["continuous_score"])
             if len(kwargs["keywords"].intersection(x.split())) > 0:
                 return label
             else:

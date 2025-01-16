@@ -49,8 +49,8 @@ def divide_labeled_unlabeled(X_train, X_feats_train, Y_train, label_per, seed=42
 
 
 def load_data_full(
-        full_path="../../data/processed/version2/full.csv",
-        embedding_path="../../data/processed/version2/full.npy",
+        full_path="../data/processed/version2/full.csv",
+        embedding_path="../data/processed/version2/full.npy",
         labels="Category", is_generate_embed = False):
 
     df_full = pd.read_csv(full_path)
@@ -76,13 +76,13 @@ def load_data_full(
     return X, X_feats, Y, df_full
 
 def load_data_train_test_split(
-        processed_data_path="../../data/processed/",
+        processed_data_path="../data/processed/",
         version=2,
         is_data_split=True, 
         labels="Category",
         is_generate_embed = False):
     
-    if is_data_split:
+    if  is_data_split:
         # Paths for training, validation, and test files
         train_path = f"{processed_data_path}version{version}/train.csv"
         train_embedding_path = f"{processed_data_path}version{version}/train.npy"
@@ -231,7 +231,7 @@ def print_all_shapes(X_V, Y_V, X_feats_V, X_T, Y_T, X_feats_T, X_L, Y_L, X_feats
     print(f'X_feats_U shape: {X_feats_U.shape}')
 
 
-def process_data(is_data_split = True, model ="LR", processed_data_path = "../../data/processed/", version = 1, labels = "Category", test_per =0.15, val_per=0.15, label_per=None, seed=42, print_shape=False):
+def process_data(is_data_split = True, model ="LR", processed_data_path = "../data/processed/", version = 1, labels = "Category", test_per =0.15, val_per=0.15, label_per=None, seed=42, print_shape=False):
     if not is_data_split:
         X, X_feats, Y, df_full = load_data_train_test_split(
             processed_data_path=processed_data_path,
