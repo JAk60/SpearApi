@@ -34,16 +34,6 @@ class Timer:
 
     def get_total(self):
         return time.time() - self.start_time
-    
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # For production, specify your frontend domain
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -59,6 +49,49 @@ class CustomJSONEncoder(json.JSONEncoder):
             return obj
         
         return super().default(obj)
+
+def get_multi_label_classifications(probabilities: Dict[str, float], confidence_threshold: float = 0.02) -> Dict[str, float]:
+    """
+    Get all classifications above the confidence threshold for multi-label fields
+    """
+    return {class_name: prob for class_name, prob in probabilities.items() if prob > confidence_threshold}
+
+def create_high_confidence_output(model_output: Dict[str, Dict[str, float]], refined_output: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, float]]:
+    """
+    Creates high confidence output incorporating both model predictions and refined classifications
+    """
+    high_confidence_output = {}
+    
+    # Multi-label fields that should contain all classifications above threshold
+    multi_label_fields = {'Task Objective', 'Constraints', 'Objective function'}
+    
+    # Process each layer from model output
+    for layer_key, probabilities in model_output.items():
+        if not probabilities:
+            continue
+            
+        # Handle multi-label fields differently
+        if layer_key in multi_label_fields:
+            high_confidence_output[layer_key] = get_multi_label_classifications(probabilities)
+        else:
+            # For single-label fields, take the highest probability classification
+            max_class = max(probabilities.items(), key=lambda x: x[1])
+            high_confidence_output[layer_key] = {max_class[0]: max_class[1]}
+    
+    # Merge with refined output, giving priority to refined classifications
+    for layer_key, refined_classes in refined_output.items():
+        if refined_classes:  # Only update if refined classification exists
+            if layer_key in multi_label_fields:
+                # For multi-label fields, merge with existing classifications
+                current_classes = high_confidence_output.get(layer_key, {})
+                # Update with refined classifications, overwriting if same class exists
+                current_classes.update(refined_classes)
+                high_confidence_output[layer_key] = current_classes
+            else:
+                # For single-label fields, completely replace with refined classification
+                high_confidence_output[layer_key] = refined_classes
+    
+    return high_confidence_output
 
 def transform_predictions(pred_prob_all):
     """
@@ -78,8 +111,8 @@ def transform_predictions(pred_prob_all):
     }
     
     for key, probs in zip([
-        "CATEGORY", "sub category","criticality", "LEVEL", "Action", "Entity", 
-        "From","Task Objective", "Constraints","Objective function",
+        "CATEGORY", "sub category", "criticality", "LEVEL", "Action", "Entity", 
+        "From", "Task Objective", "Constraints", "Objective function",
     ], pred_prob_all):
         if key == "CATEGORY":
             model_output['category'] = probs
@@ -93,6 +126,16 @@ def transform_predictions(pred_prob_all):
             model_output[key] = probs
     
     return model_output
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For production, specify your frontend domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.websocket("/predict")
 async def predict(
@@ -108,7 +151,6 @@ async def predict(
     
     qa_logs = []
     refined_output = {}  # Store the refined classifications
-    high_confidence_output = {}  # Store the high confidence classifications
     
     try:
         # Get initial predictions
@@ -120,14 +162,8 @@ async def predict(
         
         # Transform predictions
         model_output = transform_predictions(pred_prob_all)
+        print("--->>M/O",model_output)
         filtered_output = filter_low_confidence_classifications(model_output)
-        
-        # Store high confidence classifications
-        for layer_key, probabilities in model_output.items():
-            if probabilities:
-                # Get the highest probability classification
-                max_class = max(probabilities.items(), key=lambda x: x[1])
-                high_confidence_output[layer_key] = {max_class[0]: max_class[1]}
         
         # Process each classification layer
         for layer_key, probabilities in filtered_output.items():
@@ -198,6 +234,9 @@ async def predict(
                 traceback.print_exc()
                 continue
         
+        # Create final high confidence output incorporating both sources
+        high_confidence_output = create_high_confidence_output(model_output, refined_output)
+        
         # Save logs
         if qa_logs:
             df = pd.DataFrame(qa_logs)
@@ -207,7 +246,7 @@ async def predict(
         
         # Send final results
         total_time = timer.get_total()
-        await websocket.send_json({
+        final_response = {
             'status': 'completed',
             'refined_classifications': refined_output,
             'high_confidence_classifications': high_confidence_output,
@@ -217,18 +256,11 @@ async def predict(
                 'checkpoints': timer.checkpoints
             },
             'log_file': log_filename if qa_logs else None
-        })
-        print("----->>>",{
-            'status': 'completed',
-            'refined_classifications': refined_output,
-            'high_confidence_classifications': high_confidence_output,
-            'timing_summary': {
-                'connection_time': connection_time,
-                'total_time': total_time,
-                'checkpoints': timer.checkpoints
-            },
-            'log_file': log_filename if qa_logs else None
-        })
+        }
+        
+        await websocket.send_json(final_response)
+        print("----->>>", final_response)
+        
     except WebSocketDisconnect:
         print(f"Client disconnected after {timer.get_total():.3f} seconds")
     except Exception as e:
